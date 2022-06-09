@@ -84,11 +84,23 @@ function ccEngine() {
    this.outputExtension = DEFAULT_OUTPUT_EXTENSION;
    this.overwriteExisting = false;
    this.outputFormat = null;
-   Console.writeln(this.inputFiles.toString());
-   
-   /*var cc_process = new CosmeticCorrection;
-   with (cc_process) {
-         targetFrames = [[true,inputFiles.toString()]];
+
+
+   //Executeボタンを押した後に実行されるものは関数オブジェクトとしてここに書いて、mainから呼び出します。
+   //これがないと、最初にccEngine()の中身が全部実行されてしまいます。
+   this.ccEngineExecution = function () {
+      var cc_process = new CosmeticCorrection;
+      this.cc_inputFiles = [];
+      //配列渡しはこれでOKです。targetFramesの型に沿う形でtrueを付加しています。
+      for (let i = 0; i < this.inputFiles.length; ++i) {
+         this.cc_inputFiles.push([true, this.inputFiles[i].toString()]);
+      }
+      //debug用for文、消してくれてOKです
+      for (let i = 0; i < this.cc_inputFiles.length; ++i) {
+         Console.writeln(this.cc_inputFiles[i]);
+      }
+      with (cc_process) {
+         targetFrames = this.cc_inputFiles;
          masterDarkPath = "";
          outputDir = "";
          outputExtension = ".xisf";
@@ -104,13 +116,14 @@ function ccEngine() {
          useAutoDetect = true;
          hotAutoCheck = false;
          hotAutoValue = 15.0;
-         coldAutoCheck = false;
+         coldAutoCheck = true; //falseだとなぜかGlobal Contextで動きません
          coldAutoValue = 15.0;
          amount = 1.00;
          useDefectList = false;
          defects = [];
          executeGlobal();
-      } */
+      }
+   }
 }
 
 var engine = new ccEngine;
@@ -150,10 +163,10 @@ function ccDialog(){
          filters = filters.concat( filters.map( f => ( f.toUpperCase() ) ) );
          let L = new FileList(gdd.directory, filters, false);
          this.dialog.files_TreeBox.canUpdate = false;
-         var node = new TreeBoxNode (this.dialog.files_TreeBox);
-         
+
          for (var i = 0; i < L.files.length; ++i) {
             Console.writeln(L.files[i]);
+            var node = new TreeBoxNode(this.dialog.files_TreeBox);
             node.setText(0, L.files[i]);
          }
          this.dialog.files_TreeBox.canUpdate = true;
@@ -207,11 +220,12 @@ function showDialog(){
 function main(){
    let retVal = showDialog();
 
-   if(retVal == 1){
-      Console.writeln("Script closed")
-  } else {
-      Console.writeln("Cancelled")
-  }
+   if (retVal == 1) {
+      engine.ccEngineExecution();　 //dialog.executeが押されたらここで関数オブジェクトを読んで処理を走らせます。
+      Console.writeln("Script closed");
+   } else {
+      Console.writeln("Cancelled");
+   }
 }
 
 main();
